@@ -5,8 +5,8 @@ import android.net.Uri
 import com.cloudinary.android.MediaManager
 import com.cloudinary.android.callback.ErrorInfo
 import com.cloudinary.android.callback.UploadCallback
+import com.example.campushop.BuildConfig
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.collections.get
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -14,9 +14,9 @@ object CloudinaryHelper {
 
     fun initialize(context: Context) {
         val config = HashMap<String, String>()
-        config["cloud_name"] = "dkxfegrt4"      // ← Replace with yours
-        config["api_key"] = "244785283188837"            // ← Replace with yours
-        config["api_secret"] = "Q4bOVFtA93HC17IoC-SPLpaO5rA"      // ← Replace with yours
+        config["cloud_name"] = BuildConfig.CLOUDINARY_CLOUD_NAME
+        config["api_key"] = BuildConfig.CLOUDINARY_API_KEY
+        config["api_secret"] = BuildConfig.CLOUDINARY_API_SECRET
 
         MediaManager.init(context, config)
     }
