@@ -1,8 +1,16 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
+}
+
+val properties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    properties.load(localPropertiesFile.inputStream())
 }
 
 android {
@@ -17,6 +25,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "${properties.getProperty("CLOUDINARY_CLOUD_NAME") ?: ""}")
+        buildConfigField("String", "CLOUDINARY_API_KEY", "${properties.getProperty("CLOUDINARY_API_KEY") ?: ""}")
+        buildConfigField("String", "CLOUDINARY_API_SECRET", "${properties.getProperty("CLOUDINARY_API_SECRET") ?: ""}")
     }
 
     buildTypes {
@@ -37,6 +49,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
