@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "79332889647",
+    "project_id": "campushop-428e8",
+    "storage_bucket": "campushop-428e8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:79332889647:android:53847c7b883d0af0e162da",
+        "android_client_info": {
+          "package_name": "com.example.campushop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5C5ksgme3i1mUvkMWU44fw4YPuPlNl-4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
