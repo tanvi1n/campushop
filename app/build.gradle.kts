@@ -26,9 +26,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "${properties.getProperty("CLOUDINARY_CLOUD_NAME") ?: ""}")
-        buildConfigField("String", "CLOUDINARY_API_KEY", "${properties.getProperty("CLOUDINARY_API_KEY") ?: ""}")
-        buildConfigField("String", "CLOUDINARY_API_SECRET", "${properties.getProperty("CLOUDINARY_API_SECRET") ?: ""}")
+        // Change these lines in app/build.gradle.kts
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${properties.getProperty("CLOUDINARY_CLOUD_NAME") ?: ""}\"")
+        buildConfigField("String", "CLOUDINARY_API_KEY", "\"${properties.getProperty("CLOUDINARY_API_KEY") ?: ""}\"")
+        buildConfigField("String", "CLOUDINARY_API_SECRET", "\"${properties.getProperty("CLOUDINARY_API_SECRET") ?: ""}\"")
     }
 
     buildTypes {
@@ -72,6 +73,8 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)  // ADD THIS
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+
 
     // Cloudinary
     implementation(libs.cloudinary.android)
