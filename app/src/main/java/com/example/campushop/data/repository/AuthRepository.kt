@@ -1,89 +1,92 @@
 package com.example.campushop.data.repository
 
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.example.campushop.data.model.User
 import kotlinx.coroutines.tasks.await
 
 class AuthRepository {
+    private val auth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
 
-    private val auth: FirebaseAuth = Firebase.auth
-    private val firestore: FirebaseFirestore = Firebase.firestore
+    suspend fun signInWithGoogle(account: GoogleSignInAccount): Result<Boolean> {
+        return try {
+            val email = account.email ?: ""
 
-    // Get current user ID
+            // VALIDATION: Check if email is an educational email
+            val isEducationalEmail = email.endsWith(".edu.in", ignoreCase = true) ||
+                    email.endsWith(".ac.in", ignoreCase = true) ||
+                    email.endsWith(".edu", ignoreCase = true)
+
+            if (!isEducationalEmail) {
+                return Result.failure(Exception("Please use your university email address (.edu, .edu.in, or .ac.in)"))
+            }
+
+            val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+            val result = auth.signInWithCredential(credential).await()
+            val userId = result.user?.uid ?: throw Exception("Sign in failed")
+
+            val userDoc = firestore.collection("users").document(userId).get().await()
+
+            if (!userDoc.exists()) {
+                // New user - create document with profile incomplete
+                val userData = hashMapOf(
+                    "name" to (account.displayName ?: "Unknown"),
+                    "email" to email,
+                    "department" to "",
+                    "year" to "",
+                    "userId" to userId,
+                    "createdAt" to System.currentTimeMillis(),
+                    "profileComplete" to false
+                )
+                firestore.collection("users").document(userId).set(userData).await()
+                // Return false to indicate profile is incomplete
+                return Result.success(false)
+            } else {
+                // Existing user - check if profile is complete
+                val isComplete = userDoc.getBoolean("profileComplete") ?: false
+                return Result.success(isComplete)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun logout() {
+        auth.signOut()
+    }
+
     fun getCurrentUserId(): String? {
         return auth.currentUser?.uid
     }
 
-    // Check if user is logged in
-    fun isUserLoggedIn(): Boolean {
+    fun isLoggedIn(): Boolean {
         return auth.currentUser != null
     }
 
-    // Register new user
-    suspend fun registerUser(
-        email: String,
-        password: String,
-        name: String,
-        department: String,
-        year: String
-    ): Result<User> {
-        return try {
-            // Create auth account
-            val authResult = auth.createUserWithEmailAndPassword(email, password).await()
-            val userId = authResult.user?.uid ?: throw Exception("User ID is null")
+    fun getCurrentUserEmail(): String? {
+        return auth.currentUser?.email
+    }
 
-            // Create user document in Firestore
-            val user = User(
-                userId = userId,
-                name = name,
-                email = email,
-                department = department,
-                year = year
+    suspend fun isProfileComplete(userId: String): Boolean {
+        return try {
+            val doc = firestore.collection("users").document(userId).get().await()
+            doc.getBoolean("profileComplete") ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun updateUserProfile(userId: String, department: String, year: String): Result<Unit> {
+        return try {
+            val updates = hashMapOf(
+                "department" to department,
+                "year" to year,
+                "profileComplete" to true
             )
-
-            firestore.collection("users")
-                .document(userId)
-                .set(user)
-                .await()
-
-            Result.success(user)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    // Login user
-    suspend fun loginUser(email: String, password: String): Result<String> {
-        return try {
-            val authResult = auth.signInWithEmailAndPassword(email, password).await()
-            val userId = authResult.user?.uid ?: throw Exception("User ID is null")
-            Result.success(userId)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    // Logout user
-    fun logoutUser() {
-        auth.signOut()
-    }
-
-    // Get user data from Firestore
-    suspend fun getUserData(userId: String): Result<User> {
-        return try {
-            val document = firestore.collection("users")
-                .document(userId)
-                .get()
-                .await()
-
-            val user = document.toObject(User::class.java)
-                ?: throw Exception("User not found")
-
-            Result.success(user)
+            firestore.collection("users").document(userId).update(updates as Map<String, Any>).await()
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

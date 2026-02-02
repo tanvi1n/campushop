@@ -16,9 +16,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.campushop.data.model.Listing
 import com.example.campushop.ui.screens.auth.LoginScreen
-import com.example.campushop.ui.screens.auth.RegisterScreen
+import com.example.campushop.ui.screens.auth.ProfileSetupScreen
 import com.example.campushop.ui.screens.listings.CreateListingScreen
 import com.example.campushop.ui.screens.listings.FeedScreen
 import com.example.campushop.ui.screens.listings.ItemDetailScreen
@@ -31,7 +30,7 @@ import androidx.compose.ui.unit.dp
 // Screen routes
 sealed class Screen(val route: String) {
     object Login : Screen("login")
-    object Register : Screen("register")
+    object ProfileSetup : Screen("profile_setup")
     object Feed : Screen("feed")
     object CreateListing : Screen("create_listing")
     object ItemDetail : Screen("item_detail")
@@ -49,14 +48,17 @@ fun NavGraph(
         navController = navController,
         startDestination = Screen.Login.route
     ) {
-        // Login Screen
+        // Login Screen (Google Sign-In only)
         composable(Screen.Login.route) {
             LoginScreen(
-                onNavigateToRegister = {
-                    navController.navigate(Screen.Register.route)
-                },
+                onNavigateToRegister = {}, // Can remove this parameter
                 onLoginSuccess = {
                     navController.navigate(Screen.Feed.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onNavigateToProfileSetup = {
+                    navController.navigate(Screen.ProfileSetup.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -64,20 +66,20 @@ fun NavGraph(
             )
         }
 
-        // Register Screen
-        composable(Screen.Register.route) {
-            RegisterScreen(
-                onNavigateToLogin = {
-                    navController.popBackStack()
-                },
-                onRegisterSuccess = {
+        // Profile Setup Screen
+        composable(Screen.ProfileSetup.route) {
+            ProfileSetupScreen(
+                onProfileComplete = {
                     navController.navigate(Screen.Feed.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
+                        popUpTo(Screen.ProfileSetup.route) { inclusive = true }
                     }
                 },
                 viewModel = authViewModel
             )
         }
+
+        // Remove Register route if not needed
+        // composable(Screen.Register.route) { ... }
 
         // Feed Screen (with bottom nav)
         composable(Screen.Feed.route) {
@@ -103,7 +105,13 @@ fun NavGraph(
                 ItemDetailScreen(
                     listing = selectedListing,
                     onNavigateBack = { navController.popBackStack() },
-                    viewModel = listingsViewModel
+
+                    viewModel = listingsViewModel,
+                    onContactSeller = { phoneNumber ->
+                        // This is where you'd handle the contact action,
+                        // e.g., opening the dialer. For now, we leave it empty or add a log.
+                        println("Contacting seller at: $phoneNumber")
+                    }
                 )
             }
         }
