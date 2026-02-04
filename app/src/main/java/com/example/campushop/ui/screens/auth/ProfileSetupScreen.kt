@@ -15,6 +15,7 @@ fun ProfileSetupScreen(
     onProfileComplete: () -> Unit,
     viewModel: AuthViewModel
 ) {
+    var name by remember { mutableStateOf("") }
     var department by remember { mutableStateOf("") }
     var year by remember { mutableStateOf("") }
     val authState by viewModel.authState.collectAsState()
@@ -41,6 +42,15 @@ fun ProfileSetupScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Full Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
             value = department,
             onValueChange = { department = it },
             label = { Text("Department") },
@@ -59,8 +69,8 @@ fun ProfileSetupScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { viewModel.updateProfile(department, year) },
-            enabled = department.isNotBlank() && year.isNotBlank() && authState !is AuthState.Loading,
+            onClick = { viewModel.updateProfile(name, department, year) },
+            enabled = name.isNotBlank() && department.isNotBlank() && year.isNotBlank() && authState !is AuthState.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {
             if (authState is AuthState.Loading) {

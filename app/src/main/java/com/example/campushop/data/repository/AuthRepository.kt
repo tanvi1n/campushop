@@ -61,12 +61,29 @@ class AuthRepository {
         return auth.currentUser?.uid
     }
 
+    fun getCurrentUserName(): String? {
+        return auth.currentUser?.displayName
+    }
+
     fun isLoggedIn(): Boolean {
         return auth.currentUser != null
     }
 
     fun getCurrentUserEmail(): String? {
         return auth.currentUser?.email
+    }
+
+    suspend fun getUserProfile(userId: String): Result<Map<String, Any>> {
+        return try {
+            val doc = firestore.collection("users").document(userId).get().await()
+            if (doc.exists()) {
+                Result.success(doc.data ?: emptyMap())
+            } else {
+                Result.failure(Exception("User profile not found"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun isProfileComplete(userId: String): Boolean {
@@ -78,9 +95,10 @@ class AuthRepository {
         }
     }
 
-    suspend fun updateUserProfile(userId: String, department: String, year: String): Result<Unit> {
+    suspend fun updateUserProfile(userId: String, name: String, department: String, year: String): Result<Unit> {
         return try {
             val updates = hashMapOf(
+                "name" to name,
                 "department" to department,
                 "year" to year,
                 "profileComplete" to true

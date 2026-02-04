@@ -44,7 +44,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun updateProfile(department: String, year: String) {
+    fun updateProfile(name: String, department: String, year: String) {
         viewModelScope.launch {
             val userId = repository.getCurrentUserId()
             if (userId == null) {
@@ -53,7 +53,7 @@ class AuthViewModel : ViewModel() {
             }
 
             _authState.value = AuthState.Loading
-            val result = repository.updateUserProfile(userId, department, year)
+            val result = repository.updateUserProfile(userId, name, department, year)
 
             if (result.isSuccess) {
                 _authState.value = AuthState.Success(profileComplete = true)
