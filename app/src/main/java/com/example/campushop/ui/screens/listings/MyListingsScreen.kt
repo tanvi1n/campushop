@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -26,6 +24,71 @@ fun MyListingsScreen(
     viewModel: ListingsViewModel = viewModel()
 ) {
     val myListings by viewModel.myListings.collectAsState()
+    var showBuyerDialog by remember { mutableStateOf(false) }
+    var selectedListingId by remember { mutableStateOf("") }
+    var buyerRollNumber by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+
+    if (showBuyerDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showBuyerDialog = false
+                errorMessage = ""
+            },
+            title = { Text("Mark as Sold") },
+            text = {
+                Column {
+                    Text("Enter buyer's roll number:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = buyerRollNumber,
+                        onValueChange = { buyerRollNumber = it },
+                        label = { Text("Roll Number") },
+                        singleLine = true,
+                        isError = errorMessage.isNotEmpty()
+                    )
+                    if (errorMessage.isNotEmpty()) {
+                        Text(
+                            text = errorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (buyerRollNumber.isBlank()) {
+                            errorMessage = "Roll number is required"
+                        } else {
+                            viewModel.markAsSoldWithRollNumber(selectedListingId, buyerRollNumber) { success, error ->
+                                if (success) {
+                                    showBuyerDialog = false
+                                    buyerRollNumber = ""
+                                    errorMessage = ""
+                                } else {
+                                    errorMessage = error ?: "User not found"
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showBuyerDialog = false
+                    buyerRollNumber = ""
+                    errorMessage = ""
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -59,7 +122,11 @@ fun MyListingsScreen(
                 items(myListings) { listing ->
                     MyListingCard(
                         listing = listing,
-                        onClick = { onNavigateToDetail(listing) }
+                        onClick = { onNavigateToDetail(listing) },
+                        onMarkAsSold = { listingId -> 
+                            selectedListingId = listingId
+                            showBuyerDialog = true
+                        }
                     )
                 }
             }
@@ -70,7 +137,8 @@ fun MyListingsScreen(
 @Composable
 fun MyListingCard(
     listing: Listing,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onMarkAsSold: (String) -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -79,7 +147,8 @@ fun MyListingCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             // Image
             AsyncImage(
@@ -131,6 +200,16 @@ fun MyListingCard(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
+                }
+            }
+
+            // Mark as Sold button
+            if (listing.status == "active") {
+                Button(
+                    onClick = { onMarkAsSold(listing.listingId) },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Text("Mark Sold")
                 }
             }
         }

@@ -126,7 +126,9 @@ class ListingsViewModel : ViewModel() {
         description: String,
         category: String,
         price: Double,
-        imageUri: Uri
+        imageUri: Uri,
+        condition: String,
+        priceType: String
     ) {
         viewModelScope.launch {
             try {
@@ -155,6 +157,8 @@ class ListingsViewModel : ViewModel() {
                     price = price,
                     imageUrl = imageUrl,
                     status = "active",
+                    condition = condition,
+                    priceType = priceType,
                     createdAt = System.currentTimeMillis()
                 )
 
@@ -193,15 +197,68 @@ class ListingsViewModel : ViewModel() {
         Log.d("ListingsViewModel", "Selected listing: ${listing.title}")
     }
 
+    // Mark listing as sold with roll number lookup
+    fun markAsSoldWithRollNumber(listingId: String, buyerRollNumber: String, callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                Log.d("ListingsViewModel", "Looking up buyer with roll number: $buyerRollNumber")
+
+                val result = authRepository.getUserByRollNumber(buyerRollNumber)
+                
+                if (result.isSuccess) {
+                    val (buyerId, buyerName) = result.getOrNull()!!
+                    
+                    val updates = hashMapOf<String, Any>(
+                        "status" to "sold",
+                        "soldAt" to System.currentTimeMillis(),
+                        "buyerId" to buyerId,
+                        "buyerName" to buyerName
+                    )
+
+                    firestore.collection("listings")
+                        .document(listingId)
+                        .update(updates)
+                        .await()
+
+                    Log.d("ListingsViewModel", "Successfully marked as sold to $buyerName")
+
+                    _successMessage.value = "Item marked as sold!"
+
+                    // Refresh listings
+                    fetchAllListings()
+                    fetchMyListings()
+                    
+                    callback(true, null)
+                } else {
+                    callback(false, result.exceptionOrNull()?.message)
+                }
+
+            } catch (e: Exception) {
+                Log.e("ListingsViewModel", "Error marking as sold", e)
+                callback(false, e.message)
+            }
+        }
+    }
+
     // Mark listing as sold
-    fun markAsSold(listingId: String) {
+    fun markAsSold(listingId: String, buyerId: String = "", buyerName: String = "") {
         viewModelScope.launch {
             try {
                 Log.d("ListingsViewModel", "Marking listing $listingId as sold")
 
+                val updates = hashMapOf<String, Any>(
+                    "status" to "sold",
+                    "soldAt" to System.currentTimeMillis()
+                )
+                
+                if (buyerId.isNotEmpty()) {
+                    updates["buyerId"] = buyerId
+                    updates["buyerName"] = buyerName
+                }
+
                 firestore.collection("listings")
                     .document(listingId)
-                    .update("status", "sold")
+                    .update(updates)
                     .await()
 
                 Log.d("ListingsViewModel", "Successfully marked as sold")
@@ -215,6 +272,62 @@ class ListingsViewModel : ViewModel() {
             } catch (e: Exception) {
                 Log.e("ListingsViewModel", "Error marking as sold", e)
                 _errorMessage.value = "Failed to mark as sold: ${e.message}"
+            }
+        }
+    }
+
+    // Fetch sold items
+    private val _soldItems = MutableStateFlow<List<Listing>>(emptyList())
+    val soldItems: StateFlow<List<Listing>> = _soldItems
+
+    fun fetchSoldItems() {
+        viewModelScope.launch {
+            try {
+                val userId = authRepository.getCurrentUserId() ?: return@launch
+
+                val snapshot = firestore.collection("listings")
+                    .whereEqualTo("userId", userId)
+                    .whereEqualTo("status", "sold")
+                    .orderBy("soldAt", Query.Direction.DESCENDING)
+                    .get()
+                    .await()
+
+                val listings = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(Listing::class.java)?.copy(listingId = doc.id)
+                }
+
+                _soldItems.value = listings
+
+            } catch (e: Exception) {
+                Log.e("ListingsViewModel", "Error fetching sold items", e)
+            }
+        }
+    }
+
+    // Fetch purchased items
+    private val _purchasedItems = MutableStateFlow<List<Listing>>(emptyList())
+    val purchasedItems: StateFlow<List<Listing>> = _purchasedItems
+
+    fun fetchPurchasedItems() {
+        viewModelScope.launch {
+            try {
+                val userId = authRepository.getCurrentUserId() ?: return@launch
+
+                val snapshot = firestore.collection("listings")
+                    .whereEqualTo("buyerId", userId)
+                    .whereEqualTo("status", "sold")
+                    .orderBy("soldAt", Query.Direction.DESCENDING)
+                    .get()
+                    .await()
+
+                val listings = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(Listing::class.java)?.copy(listingId = doc.id)
+                }
+
+                _purchasedItems.value = listings
+
+            } catch (e: Exception) {
+                Log.e("ListingsViewModel", "Error fetching purchased items", e)
             }
         }
     }

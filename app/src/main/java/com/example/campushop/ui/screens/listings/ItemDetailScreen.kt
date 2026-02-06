@@ -72,7 +72,7 @@ fun ItemDetailScreen(
 
             // Price
             Text(
-                text = "$${listing.price}",
+                text = "₹${listing.price}",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
@@ -91,6 +91,38 @@ fun ItemDetailScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(text = listing.category)
+                }
+            }
+
+            // Condition
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Condition",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(text = listing.condition)
+                }
+            }
+
+            // Price Type
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Price Type",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(text = listing.priceType)
                 }
             }
 

@@ -12,5 +12,10 @@ data class Listing(
     val price: Double = 0.0,
     val imageUrl: String = "",
     val status: String = "active",
+    val condition: String = "Used",
+    val priceType: String = "Negotiable",
+    val buyerId: String = "",
+    val buyerName: String = "",
+    val soldAt: Long = 0L,
     val createdAt: Long = System.currentTimeMillis()
 )

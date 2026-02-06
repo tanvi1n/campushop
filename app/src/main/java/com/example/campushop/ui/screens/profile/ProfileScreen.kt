@@ -1,12 +1,16 @@
 package com.example.campushop.ui.screens.profile
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,7 +21,11 @@ import com.example.campushop.data.repository.AuthRepository
 import kotlinx.coroutines.launch
 
 @Composable
-fun ProfileScreen(onLogout: () -> Unit) {
+fun ProfileScreen(
+    onLogout: () -> Unit,
+    onNavigateToSoldItems: () -> Unit = {},
+    onNavigateToPurchases: () -> Unit = {}
+) {
     val authRepository = remember { AuthRepository() }
     val scope = rememberCoroutineScope()
     
@@ -26,6 +34,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
     var department by remember { mutableStateOf("") }
     var year by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         scope.launch {
@@ -44,10 +53,36 @@ fun ProfileScreen(onLogout: () -> Unit) {
         }
     }
 
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Account") },
+            text = { Text("Are you sure you want to delete your account? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            authRepository.deleteAccount()
+                            onLogout()
+                        }
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(24.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (isLoading) {
@@ -109,7 +144,30 @@ fun ProfileScreen(onLogout: () -> Unit) {
                 value = year
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Transaction History Buttons
+            OutlinedButton(
+                onClick = onNavigateToSoldItems,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Sell, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Sold Items")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = onNavigateToPurchases,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.ShoppingBag, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Purchase History")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = onLogout,
@@ -120,6 +178,21 @@ fun ProfileScreen(onLogout: () -> Unit) {
             ) {
                 Text("Logout")
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = { showDeleteDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                )
+            ) {
+                Text("Delete Account")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

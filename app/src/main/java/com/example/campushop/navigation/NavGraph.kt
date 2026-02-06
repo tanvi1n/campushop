@@ -42,6 +42,8 @@ sealed class Screen(val route: String) {
     object ItemDetail : Screen("item_detail")
     object MyListings : Screen("my_listings")
     object Profile : Screen("profile")
+    object SoldItems : Screen("sold_items")
+    object PurchaseHistory : Screen("purchase_history")
     object Conversations : Screen("conversations")
     object Chat : Screen("chat/{conversationId}/{receiverId}/{receiverName}/{listingTitle}/{listingImageUrl}") {
         fun createRoute(
@@ -293,7 +295,37 @@ fun MainScreen(
                         navController.navigate(Screen.Login.route) {
                             popUpTo(Screen.Feed.route) { inclusive = true }
                         }
+                    },
+                    onNavigateToSoldItems = {
+                        localNavController.navigate(Screen.SoldItems.route)
+                    },
+                    onNavigateToPurchases = {
+                        localNavController.navigate(Screen.PurchaseHistory.route)
                     }
+                )
+            }
+
+            composable(Screen.SoldItems.route) {
+                com.example.campushop.ui.screens.profile.TransactionHistoryScreen(
+                    type = "sold",
+                    onNavigateBack = { localNavController.popBackStack() },
+                    onNavigateToDetail = { listing ->
+                        listingsViewModel.selectListing(listing)
+                        navController.navigate(Screen.ItemDetail.route)
+                    },
+                    viewModel = listingsViewModel
+                )
+            }
+
+            composable(Screen.PurchaseHistory.route) {
+                com.example.campushop.ui.screens.profile.TransactionHistoryScreen(
+                    type = "purchased",
+                    onNavigateBack = { localNavController.popBackStack() },
+                    onNavigateToDetail = { listing ->
+                        listingsViewModel.selectListing(listing)
+                        navController.navigate(Screen.ItemDetail.route)
+                    },
+                    viewModel = listingsViewModel
                 )
             }
         }
