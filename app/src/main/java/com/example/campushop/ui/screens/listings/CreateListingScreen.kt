@@ -31,10 +31,16 @@ fun CreateListingScreen(
     var description by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Textbooks") }
+    var condition by remember { mutableStateOf("Used") }
+    var priceType by remember { mutableStateOf("Negotiable") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var showCategoryMenu by remember { mutableStateOf(false) }
+    var showConditionMenu by remember { mutableStateOf(false) }
+    var showPriceTypeMenu by remember { mutableStateOf(false) }
 
     val categories = listOf("Textbooks", "Electronics", "Furniture", "Other")
+    val conditions = listOf("New", "Like New", "Good", "Used", "Fair")
+    val priceTypes = listOf("Negotiable", "Fixed")
 
     val isLoading by viewModel.isLoading.collectAsState()
     val successMessage by viewModel.successMessage.collectAsState()
@@ -162,14 +168,82 @@ fun CreateListingScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Condition dropdown
+            ExposedDropdownMenuBox(
+                expanded = showConditionMenu,
+                onExpandedChange = { showConditionMenu = it }
+            ) {
+                OutlinedTextField(
+                    value = condition,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Condition") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showConditionMenu) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
+
+                ExposedDropdownMenu(
+                    expanded = showConditionMenu,
+                    onDismissRequest = { showConditionMenu = false }
+                ) {
+                    conditions.forEach { cond ->
+                        DropdownMenuItem(
+                            text = { Text(cond) },
+                            onClick = {
+                                condition = cond
+                                showConditionMenu = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Price
             CustomTextField(
                 value = price,
                 onValueChange = { price = it },
                 label = "Price (₹)",
                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             )
+
+            // Price Type dropdown
+            ExposedDropdownMenuBox(
+                expanded = showPriceTypeMenu,
+                onExpandedChange = { showPriceTypeMenu = it }
+            ) {
+                OutlinedTextField(
+                    value = priceType,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Price Type") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showPriceTypeMenu) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
+
+                ExposedDropdownMenu(
+                    expanded = showPriceTypeMenu,
+                    onDismissRequest = { showPriceTypeMenu = false }
+                ) {
+                    priceTypes.forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type) },
+                            onClick = {
+                                priceType = type
+                                showPriceTypeMenu = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Error message
             if (errorMessage != null) {
@@ -191,7 +265,9 @@ fun CreateListingScreen(
                             description = description,
                             category = category,
                             price = price.toDoubleOrNull() ?: 0.0,
-                            imageUri = imageUri!!
+                            imageUri = imageUri!!,
+                            condition = condition,
+                            priceType = priceType
                         )
                     }
                 },

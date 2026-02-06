@@ -95,10 +95,11 @@ class AuthRepository {
         }
     }
 
-    suspend fun updateUserProfile(userId: String, name: String, department: String, year: String): Result<Unit> {
+    suspend fun updateUserProfile(userId: String, name: String, rollNumber: String, department: String, year: String): Result<Unit> {
         return try {
             val updates = hashMapOf(
                 "name" to name,
+                "rollNumber" to rollNumber,
                 "department" to department,
                 "year" to year,
                 "profileComplete" to true
@@ -107,6 +108,51 @@ class AuthRepository {
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    suspend fun getUserByRollNumber(rollNumber: String): Result<Pair<String, String>> {
+        return try {
+            val snapshot = firestore.collection("users")
+                .whereEqualTo("rollNumber", rollNumber)
+                .limit(1)
+                .get()
+                .await()
+
+            if (snapshot.documents.isEmpty()) {
+                Result.failure(Exception("User with roll number $rollNumber not found"))
+            } else {
+                val doc = snapshot.documents[0]
+                val userId = doc.id
+                val userName = doc.getString("name") ?: "Unknown"
+                Result.success(Pair(userId, userName))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteAccount() {
+        try {
+            val userId = getCurrentUserId() ?: return
+            
+            // Delete user data from Firestore
+            firestore.collection("users").document(userId).delete().await()
+            
+            // Delete user listings
+            val listings = firestore.collection("listings")
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+            
+            listings.documents.forEach { doc ->
+                doc.reference.delete().await()
+            }
+            
+            // Delete Firebase Auth account
+            auth.currentUser?.delete()?.await()
+        } catch (e: Exception) {
+            throw e
         }
     }
 }
