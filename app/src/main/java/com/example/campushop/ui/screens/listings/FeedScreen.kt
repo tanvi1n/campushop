@@ -20,6 +20,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.campushop.data.model.Listing
 import com.example.campushop.viewmodel.ListingsViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -2,11 +2,14 @@ package com.example.campushop.ui.screens.listings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -23,6 +26,7 @@ import com.example.campushop.viewmodel.ListingsViewModel
 fun ItemDetailScreen(
     listing: Listing,
     onNavigateBack: () -> Unit,
+    onContactSeller: (Listing) -> Unit,
     viewModel: ListingsViewModel = viewModel()
 ) {
     val authRepository = AuthRepository()
@@ -34,19 +38,20 @@ fun ItemDetailScreen(
             TopAppBar(
                 title = { Text("Item Details") },
                 navigationIcon = {
-                    TextButton(onClick = onNavigateBack) {
-                        Text("Back")
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         }
     ) { padding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Image
             AsyncImage(
@@ -54,96 +59,89 @@ fun ItemDetailScreen(
                 contentDescription = listing.title,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp),
+                    .height(250.dp),
                 contentScale = ContentScale.Crop
             )
 
-            // Details
-            Column(
-                modifier = Modifier.padding(24.dp)
+            // Title
+            Text(
+                text = listing.title,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            // Price
+            Text(
+                text = "$${listing.price}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            // Category
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
             ) {
-                // Title
-                Text(
-                    text = listing.title,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Price
-                Text(
-                    text = "₹${listing.price}",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Category
-                Text(
-                    text = "Category: ${listing.category}",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Divider()
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Description
-                Text(
-                    text = "Description",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = listing.description,
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Status badge
-                if (listing.status == "sold") {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Text(
-                            text = "SOLD",
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Category",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(text = listing.category)
                 }
+            }
 
+            // Description
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Description",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(text = listing.description)
+                }
+            }
+
+            // Status
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Status",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = listing.status.uppercase(),
+                        color = if (listing.status == "active") 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            // Contact Seller Button
+            if (!isOwner && listing.status == "active") {
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Action buttons
-                if (isOwner && listing.status == "active") {
-                    Button(
-                        onClick = { viewModel.markAsSold(listing.listingId) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Mark as Sold")
-                    }
-                } else if (!isOwner) {
-                    Button(
-                        onClick = { /* TODO: Implement WhatsApp contact */ },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Contact Seller")
-                    }
+                Button(
+                    onClick = { onContactSeller(listing) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Chat, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Chat with Seller")
                 }
             }
         }

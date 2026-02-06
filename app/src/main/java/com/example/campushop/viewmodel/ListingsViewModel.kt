@@ -147,6 +147,8 @@ class ListingsViewModel : ViewModel() {
                 // Create listing object
                 val listing = Listing(
                     userId = userId,
+                    sellerId = userId,
+                    sellerName = authRepository.getCurrentUserName() ?: "Anonymous",
                     title = title,
                     description = description,
                     category = category,

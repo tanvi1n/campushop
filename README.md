@@ -22,6 +22,12 @@ The core idea is to create a trusted, hyper-local digital marketplace exclusivel
 *   **Backend:**
     *   **Platform:** Firebase (for Authentication, Database, and Realtime Messaging)
 
+## Setup Instructions
+1. Clone the repository
+2. Download your `google-services.json` from Firebase Console
+3. Place it in the `app/` directory
+4. **Never commit this file to Git** (it's already in .gitignore)
+
  
 ## Our Vision
 To create a sustainable and affordable campus economy where no textbook goes unread, no dorm furniture is wasted, and every student can save money and connect with their peers in a safe, trusted digital space.
