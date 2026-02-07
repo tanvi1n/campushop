@@ -8,7 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -32,6 +32,16 @@ fun ItemDetailScreen(
     val authRepository = AuthRepository()
     val currentUserId = authRepository.getCurrentUserId()
     val isOwner = currentUserId == listing.userId
+    
+    var sellerProfile by remember { mutableStateOf<Map<String, Any>?>(null) }
+    
+    LaunchedEffect(listing.sellerId) {
+        if (listing.sellerId.isNotEmpty()) {
+            authRepository.getUserProfile(listing.sellerId).onSuccess { profile ->
+                sellerProfile = profile
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -70,6 +80,26 @@ fun ItemDetailScreen(
                 fontWeight = FontWeight.Bold
             )
 
+            // Tags (Condition & Price Type)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AssistChip(
+                    onClick = { },
+                    label = { Text(listing.condition) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                )
+                AssistChip(
+                    onClick = { },
+                    label = { Text(listing.priceType) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                )
+            }
+
             // Price
             Text(
                 text = "₹${listing.price}",
@@ -94,38 +124,6 @@ fun ItemDetailScreen(
                 }
             }
 
-            // Condition
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "Condition",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(text = listing.condition)
-                }
-            }
-
-            // Price Type
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "Price Type",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(text = listing.priceType)
-                }
-            }
-
             // Description
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -142,25 +140,37 @@ fun ItemDetailScreen(
                 }
             }
 
-            // Status
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+            // Seller Profile
+            if (!isOwner && sellerProfile != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
                 ) {
-                    Text(
-                        text = "Status",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = listing.status.uppercase(),
-                        color = if (listing.status == "active") 
-                            MaterialTheme.colorScheme.primary 
-                        else 
-                            MaterialTheme.colorScheme.error
-                    )
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Seller Information",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Name: ${sellerProfile!!["name"] ?: "Unknown"}",
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Department: ${sellerProfile!!["department"] ?: "N/A"}",
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Year: ${sellerProfile!!["year"] ?: "N/A"}",
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
 

@@ -132,6 +132,27 @@ class AuthRepository {
         }
     }
 
+    suspend fun getUserByEmail(email: String): Result<Pair<String, String>> {
+        return try {
+            val snapshot = firestore.collection("users")
+                .whereEqualTo("email", email)
+                .limit(1)
+                .get()
+                .await()
+
+            if (snapshot.documents.isEmpty()) {
+                Result.failure(Exception("User with email $email not found"))
+            } else {
+                val doc = snapshot.documents[0]
+                val userId = doc.id
+                val userName = doc.getString("name") ?: "Unknown"
+                Result.success(Pair(userId, userName))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun deleteAccount() {
         try {
             val userId = getCurrentUserId() ?: return

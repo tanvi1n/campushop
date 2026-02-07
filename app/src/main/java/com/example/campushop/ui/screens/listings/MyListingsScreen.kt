@@ -26,7 +26,7 @@ fun MyListingsScreen(
     val myListings by viewModel.myListings.collectAsState()
     var showBuyerDialog by remember { mutableStateOf(false) }
     var selectedListingId by remember { mutableStateOf("") }
-    var buyerRollNumber by remember { mutableStateOf("") }
+    var buyerEmail by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
     if (showBuyerDialog) {
@@ -38,12 +38,12 @@ fun MyListingsScreen(
             title = { Text("Mark as Sold") },
             text = {
                 Column {
-                    Text("Enter buyer's roll number:")
+                    Text("Enter buyer's email address:")
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
-                        value = buyerRollNumber,
-                        onValueChange = { buyerRollNumber = it },
-                        label = { Text("Roll Number") },
+                        value = buyerEmail,
+                        onValueChange = { buyerEmail = it },
+                        label = { Text("Email Address") },
                         singleLine = true,
                         isError = errorMessage.isNotEmpty()
                     )
@@ -60,13 +60,13 @@ fun MyListingsScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (buyerRollNumber.isBlank()) {
-                            errorMessage = "Roll number is required"
+                        if (buyerEmail.isBlank()) {
+                            errorMessage = "Email is required"
                         } else {
-                            viewModel.markAsSoldWithRollNumber(selectedListingId, buyerRollNumber) { success, error ->
+                            viewModel.markAsSoldWithEmail(selectedListingId, buyerEmail) { success, error ->
                                 if (success) {
                                     showBuyerDialog = false
-                                    buyerRollNumber = ""
+                                    buyerEmail = ""
                                     errorMessage = ""
                                 } else {
                                     errorMessage = error ?: "User not found"
@@ -81,7 +81,7 @@ fun MyListingsScreen(
             dismissButton = {
                 TextButton(onClick = { 
                     showBuyerDialog = false
-                    buyerRollNumber = ""
+                    buyerEmail = ""
                     errorMessage = ""
                 }) {
                     Text("Cancel")
