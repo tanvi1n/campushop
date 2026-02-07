@@ -301,7 +301,8 @@ fun MainScreen(
                     },
                     onNavigateToPurchases = {
                         localNavController.navigate(Screen.PurchaseHistory.route)
-                    }
+                    },
+                    viewModel = listingsViewModel
                 )
             }
 

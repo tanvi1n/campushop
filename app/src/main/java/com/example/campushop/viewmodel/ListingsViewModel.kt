@@ -240,6 +240,50 @@ class ListingsViewModel : ViewModel() {
         }
     }
 
+    // Mark listing as sold with email lookup
+    fun markAsSoldWithEmail(listingId: String, buyerEmail: String, callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                Log.d("ListingsViewModel", "Looking up buyer with email: $buyerEmail")
+
+                val result = authRepository.getUserByEmail(buyerEmail)
+                
+                if (result.isSuccess) {
+                    val (buyerId, buyerName) = result.getOrNull()!!
+                    
+                    val updates = hashMapOf<String, Any>(
+                        "status" to "sold",
+                        "soldAt" to System.currentTimeMillis(),
+                        "buyerId" to buyerId,
+                        "buyerName" to buyerName
+                    )
+
+                    firestore.collection("listings")
+                        .document(listingId)
+                        .update(updates)
+                        .await()
+
+                    Log.d("ListingsViewModel", "Successfully marked as sold to $buyerName")
+
+                    _successMessage.value = "Item marked as sold!"
+
+                    // Refresh listings
+                    fetchAllListings()
+                    fetchMyListings()
+                    fetchSoldItems()
+                    
+                    callback(true, null)
+                } else {
+                    callback(false, result.exceptionOrNull()?.message)
+                }
+
+            } catch (e: Exception) {
+                Log.e("ListingsViewModel", "Error marking as sold", e)
+                callback(false, e.message)
+            }
+        }
+    }
+
     // Mark listing as sold
     fun markAsSold(listingId: String, buyerId: String = "", buyerName: String = "") {
         viewModelScope.launch {
@@ -288,13 +332,12 @@ class ListingsViewModel : ViewModel() {
                 val snapshot = firestore.collection("listings")
                     .whereEqualTo("userId", userId)
                     .whereEqualTo("status", "sold")
-                    .orderBy("soldAt", Query.Direction.DESCENDING)
                     .get()
                     .await()
 
                 val listings = snapshot.documents.mapNotNull { doc ->
                     doc.toObject(Listing::class.java)?.copy(listingId = doc.id)
-                }
+                }.sortedByDescending { it.soldAt }
 
                 _soldItems.value = listings
 
@@ -316,13 +359,12 @@ class ListingsViewModel : ViewModel() {
                 val snapshot = firestore.collection("listings")
                     .whereEqualTo("buyerId", userId)
                     .whereEqualTo("status", "sold")
-                    .orderBy("soldAt", Query.Direction.DESCENDING)
                     .get()
                     .await()
 
                 val listings = snapshot.documents.mapNotNull { doc ->
                     doc.toObject(Listing::class.java)?.copy(listingId = doc.id)
-                }
+                }.sortedByDescending { it.soldAt }
 
                 _purchasedItems.value = listings
 

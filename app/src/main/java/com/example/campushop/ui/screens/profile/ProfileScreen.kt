@@ -17,14 +17,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.campushop.data.repository.AuthRepository
+import com.example.campushop.viewmodel.ListingsViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
     onNavigateToSoldItems: () -> Unit = {},
-    onNavigateToPurchases: () -> Unit = {}
+    onNavigateToPurchases: () -> Unit = {},
+    viewModel: ListingsViewModel = viewModel()
 ) {
     val authRepository = remember { AuthRepository() }
     val scope = rememberCoroutineScope()
@@ -35,6 +38,9 @@ fun ProfileScreen(
     var year by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    
+    val soldItems by viewModel.soldItems.collectAsState()
+    val purchasedItems by viewModel.purchasedItems.collectAsState()
 
     LaunchedEffect(Unit) {
         scope.launch {
@@ -49,6 +55,11 @@ fun ProfileScreen(
                     year = profile["year"] as? String ?: ""
                 }
             }
+            
+            // Fetch sold and purchased items
+            viewModel.fetchSoldItems()
+            viewModel.fetchPurchasedItems()
+            
             isLoading = false
         }
     }
@@ -144,6 +155,22 @@ fun ProfileScreen(
                 value = year
             )
 
+            Spacer(modifier = Modifier.height(12.dp))
+
+            ProfileInfoCard(
+                icon = Icons.Default.Sell,
+                label = "Sold Items",
+                value = "${soldItems.size}"
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            ProfileInfoCard(
+                icon = Icons.Default.ShoppingBag,
+                label = "Purchased Items",
+                value = "${purchasedItems.size}"
+            )
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Transaction History Buttons
@@ -153,7 +180,7 @@ fun ProfileScreen(
             ) {
                 Icon(Icons.Default.Sell, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Sold Items")
+                Text("View Sold Items")
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -164,7 +191,7 @@ fun ProfileScreen(
             ) {
                 Icon(Icons.Default.ShoppingBag, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Purchase History")
+                Text("View Purchase History")
             }
 
             Spacer(modifier = Modifier.height(24.dp))
